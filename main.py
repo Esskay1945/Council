@@ -18,7 +18,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Get the API key from the environment
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
-
+print(MISTRAL_API_KEY)
 # ---------------------------------------------------------
 # Helper Function: Call the Mistral API
 # ---------------------------------------------------------
@@ -52,6 +52,8 @@ async def call_mistral(messages, model="mistral-small-latest", max_tokens=400):
 # ---------------------------------------------------------
 # Core Logic: Multi-Round Agent Debate Loop
 # ---------------------------------------------------------
+MAX_REVISIONS = 3
+TARGET_SCORE = 90
 async def agent_loop(user_prompt: str):
     """
     This is an asynchronous generator. It yields (streams) data back to the
@@ -114,37 +116,120 @@ async def agent_loop(user_prompt: str):
     # ---------------------------------------------------------
     # 4. Final Stage: The Coding Agent Execution
     # ---------------------------------------------------------
-    coding_agent_name = "Coding Agent"
-    yield f"data: {json.dumps({'agent': coding_agent_name, 'status': 'typing'})}\n\n"
-    
-    coding_prompt = (
-        "You are an Elite Principal Developer. Based on the council debate and implementation plan, "
-        "write the complete, production-grade raw HTML, CSS, and JS.\n"
-        "STRICT REQUIREMENTS:\n"
-        "1. Write complete, high-fidelity code. Include JS state management, event listeners, smooth CSS transitions, and dark mode layout.\n"
-        "2. DO NOT output partial code or placeholders like '// add code here'. Output the complete working code.\n"
-        "3. Output ONLY ONE single complete HTML file containing embedded <style> and <script> tags.\n"
-        "4. Do NOT wrap in markdown code blocks like ```html. Start immediately with <!DOCTYPE html>."
+    tester_prompt = (
+    "You are a Frontend QA Tester.\n"
+    "Review the HTML, CSS and JavaScript.\n"
+    "Check for:\n"
+    "- Missing functions\n"
+    "- Broken event listeners\n"
+    "- Invalid selectors\n"
+    "- Syntax errors\n"
+    "- Integration issues\n\n"
+    "Return ONLY valid JSON in this format:\n"
+    '{'
+    '"score":95,'
+    '"issues":["issue1","issue2"]'
+    '}'
     )
-    
-    messages_for_api = conversation_history.copy()
-    messages_for_api.append({"role": "system", "content": coding_prompt})
-    
-    try:
-        # Use mistral-small-latest for fast generation or mistral-large-latest
-        final_code = await call_mistral(messages_for_api, model="mistral-small-latest", max_tokens=3500)
-    except Exception as e:
-        final_code = f"<!-- Error: {str(e)} -->"
-        
-    if final_code.startswith("```html"):
-        final_code = final_code[7:]
-    elif final_code.startswith("```"):
-        final_code = final_code[3:]
-        
-    if final_code.endswith("```"):
-        final_code = final_code[:-3]
-        
-    yield f"data: {json.dumps({'agent': coding_agent_name, 'code': final_code.strip()})}\n\n"
+    coding_agent_name = "Coding Agent"
+    tester_agent_name = "Tester"
+
+    current_code = ""
+    best_code = ""
+    best_score = 0
+    test_result={}
+    for revision in range(MAX_REVISIONS):
+
+        yield f"data: {json.dumps({'agent': coding_agent_name,'status':'typing','revision':revision+1})}\n\n"
+
+        if revision == 0:
+
+            coding_prompt = (
+            "You are a Senior Frontend Developer.\n"
+            "Using the implementation plan, generate one complete HTML file.\n"
+            "Embed CSS in <style> and JavaScript in <script>.\n"
+            "Implement all requested features.\n"
+            "Return only valid HTML beginning with <!DOCTYPE html>."
+            )
+
+            messages = conversation_history.copy()
+            messages.append({
+            "role": "system",
+            "content": coding_prompt
+            })
+
+        else:
+
+            fix_prompt = (
+            "You are a Senior Frontend Developer.\n"
+            "Here is the current HTML:\n\n"
+            f"{current_code}\n\n"
+            "Tester found these issues:\n"
+            + "\n".join(test_result["issues"]) +
+            "\n\nFix ONLY these issues.\n"
+            "Return the complete corrected HTML."
+            )
+
+            messages = [
+            {
+                "role": "system",
+                "content": fix_prompt
+            }
+            ]
+
+        current_code = await call_mistral(
+        messages,
+        model="mistral-small-latest",
+        max_tokens=6500
+        )
+
+        current_code = current_code.replace("```html", "").replace("```", "").strip()
+
+        yield f"data: {json.dumps({'agent': coding_agent_name,'code':current_code})}\n\n"
+
+        yield f"data: {json.dumps({'agent': tester_agent_name,'status':'typing'})}\n\n"
+
+        tester_messages = [
+        {
+            "role":"system",
+            "content":tester_prompt
+        },
+        {
+            "role":"user",
+            "content":current_code
+        }
+        ]
+
+        try:
+
+            tester_reply = await call_mistral(
+            tester_messages,
+            model="mistral-small-latest",
+            max_tokens=300
+            )
+
+            tester_result = json.loads(tester_reply)
+
+        except Exception:
+
+            tester_result = {
+            "score":0,
+            "issues":["Tester failed to parse response."]
+            }
+
+        score = tester_result["score"]
+
+        if score > best_score:
+            best_score = score
+            best_code = current_code
+
+        yield f"data: {json.dumps({'agent':tester_agent_name,'message':tester_result})}\n\n"
+
+        if score >= TARGET_SCORE:
+            break
+
+    yield f"data: {json.dumps({'agent':'Final','code':best_code,'score':best_score})}\n\n"
+
     yield "data: [DONE]\n\n"
 
 
