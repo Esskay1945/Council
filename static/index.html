@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lovable Clone - Multi Agent Council</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i data-lucide="sparkles"></i> Council AI</h2>
+            </div>
+            
+            <div id="chat-history" class="chat-history">
+                <div class="welcome-message">
+                    <h3>What are we building today?</h3>
+                    <p>Describe your app in detail. Our council of expert AI agents will debate the best architecture and build it for you instantly.</p>
+                </div>
+                <!-- User prompts and concise status pills appear here -->
+            </div>
+            
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="prompt-input" placeholder="Build a SaaS dashboard..." rows="1"></textarea>
+                    <button id="generate-btn"><i data-lucide="send"></i></button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT MAIN AREA -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="tabs">
+                    <button class="tab-btn" data-target="chat-pane"><i data-lucide="messages-square"></i> Council Debate</button>
+                    <button class="tab-btn active" data-target="preview-pane"><i data-lucide="layout"></i> Preview</button>
+                    <button class="tab-btn" data-target="code-pane"><i data-lucide="code"></i> Code</button>
+                </div>
+                <div class="header-actions">
+                    <button id="new-chat-btn" class="secondary-btn"><i data-lucide="plus"></i> New</button>
+                </div>
+            </header>
+
+            <div class="workspace">
+                <!-- DEBATE PANE (Live Group Chat) -->
+                <div id="chat-pane" class="workspace-pane">
+                    <div class="debate-header">
+                        <h3><i data-lucide="users"></i> Live Council Debate</h3>
+                        <span id="debate-status" class="status-badge">Idle</span>
+                    </div>
+                    <div id="full-debate-log" class="debate-log">
+                        <div class="empty-state">
+                            <i data-lucide="messages-square" class="empty-icon"></i>
+                            <p>Agent debate will stream live here when you submit a prompt</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREVIEW PANE -->
+                <div id="preview-pane" class="workspace-pane active">
+                    <div class="empty-state">
+                        <i data-lucide="monitor" class="empty-icon"></i>
+                        <p>Your app preview will appear here</p>
+                    </div>
+                    <iframe id="preview-iframe" class="hidden"></iframe>
+                </div>
+
+                <!-- CODE PANE -->
+                <div id="code-pane" class="workspace-pane">
+                    <textarea id="code-output" readonly placeholder="Raw code will appear here..."></textarea>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/static/script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
