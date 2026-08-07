@@ -15,19 +15,19 @@ It mimics the functionality of `v0.dev` or `lovable.dev` by:
 2. Create and activate a virtual environment:
 
    ```bash
-   python -m venv .venv
+   python -m venv venv
    ```
 
    **Windows**
 
    ```bash
-   .venv\Scripts\activate
+   .\venv\scripts\activate
    ```
 
    **macOS / Linux**
 
    ```bash
-   source .venv/bin/activate
+   source venv/bin/activate
    ```
 3. Install dependencies:
 
