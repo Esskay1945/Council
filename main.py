@@ -29,17 +29,8 @@ async def call_mistral(messages, model="mistral-small-latest", max_tokens=400):
     """
     if not MISTRAL_API_KEY or MISTRAL_API_KEY == "your_mistral_api_key_here":
         raise ValueError("MISTRAL_API_KEY is missing! Please set your key in a .env file (MISTRAL_API_KEY=your_key) or environment variable.")
-
-    url = "https://api.mistral.ai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens
-    }
+    #removed
+    
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(url, headers=headers, json=data)
@@ -79,10 +70,7 @@ async def agent_loop(user_prompt: str):
             "name": "Security Agent",
             "role": "You are a Senior Security Architect. Briefly review the PM and Designer proposals. Identify security vulnerabilities, input sanitization, and DOM edge cases (under 100 words)."
         },
-        {
-            "name": "The Interviewer",
-            "role": "You are the Devil's Advocate. Interrogate the PM, Designer, and Security Agent. Directly attack their proposals, point out unnecessary bloat, and demand pros/cons justification (under 150 words)."
-        },
+        #removed
         {
             "name": "Product Manager (Rebuttal)",
             "role": "You are the Product Manager. Briefly defend essential features against The Interviewer's attack and drop useless bloat (under 100 words)."
@@ -176,12 +164,8 @@ async def agent_loop(user_prompt: str):
                 "content": fix_prompt
             }
             ]
-
-        current_code = await call_mistral(
-        messages,
-        model="mistral-small-latest",
-        max_tokens=6500
-        )
+        #removed
+        
 
         current_code = current_code.replace("```html", "").replace("```", "").strip()
 
@@ -250,5 +234,5 @@ async def read_index():
     """
     Serve the main HTML page when a user visits the root URL (http://127.0.0.1:8000/)
     """
-    with open("static/index.html", "r", encoding="utf-8") as f:
-        return f.read()
+    #removed
+    
